@@ -127,6 +127,9 @@ The following Dapr capabilities are not enabled in this example, but can be adde
 - **Authorization and access control**  
   Control which callers can invoke this agent and which operations are permitted using [Dapr access control policies](https://docs.dapr.io/operations/security/app-api-token/) and [Dapr mTLS authorization](https://docs.dapr.io/operations/security/mtls/mtls-overview/)
 
+**Operational by default**
+
+All of these capabilities come from running the agent with a Dapr sidecar. Identity, security, durability, observability, configuration, and integration with backing systems are provided uniformly by Dapr.
 
 ## Trigger the agent over HTTP
 
