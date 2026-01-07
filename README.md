@@ -1,34 +1,42 @@
 # Tiniest Durable Agent
 
-The tiniest durable agent possible that is production-ready too. Built with [Dapr Agents](https://diagrid.ws/dapr-agents-doc).
+A minimal, production-ready durable agent built with [Dapr Agents](https://diagrid.ws/dapr-agents-doc). This example shows how little code is required to build a durable, observable, and discoverable AI agent on Dapr.
 
 ## Prerequisites
-- [An OpenAI API key](https://platform.openai.com/api-keys) or another supported LLM
+- [OpenAI API key](https://platform.openai.com/api-keys) or another supported LLM provider
 - [Python 3.10+](https://www.python.org/downloads/)
 - [Docker](https://docs.docker.com/desktop/)
 
 ## Setup
 
-* Install Dapr locally
+### Install Dapr locally
 
-On macOS do as below (or check [here](https://docs.dapr.io/getting-started/install-dapr-selfhost/) for other platforms)
+On macOS:
+
 ```bash
 brew install dapr/tap/dapr-cli
 dapr init
+````
+
+For other platforms, see [https://docs.dapr.io/getting-started/install-dapr-selfhost/](https://docs.dapr.io/getting-started/install-dapr-selfhost/)
+
+### Configure your LLM provider
+
+Add your OpenAI or other LLM provider credentials to:
+
+```
+resources/llm-provider.yaml
 ```
 
-* Add your OpenAI or other LLM provider key to `resources/llm-provider.yaml`.
-
-* Create a virtual environment and install dapr-agents:
+### Create a virtual environment and install dapr-agents
 
 ```bash
 python3.10 -m venv .venv && source .venv/bin/activate && pip install "dapr-agents>=0.10.5"
 ```
 
+## Run the tiniest Durable Agent (embedded mode)
 
-## Run tiniest Durable Agent in embedded mode
-
-This is the entire agent [implementation](./durable_agent_minimal.py).
+This is the complete agent implementation: [`durable_agent_minimal.py`](./durable_agent_minimal.py).
 
 ```python
 from dapr_agents import DurableAgent
@@ -39,32 +47,35 @@ agent = DurableAgent(name="Assistant")
 print(runner.run_sync(agent, {"task": "Write a haiku about programming."}))
 runner.shutdown(agent)
 ```
-* Run the agent
+
+Run the agent:
 
 ```bash
-dapr run --app-id durable-agent-minimal --resources-path ./resources --log-level error -- python durable_agent_minimal.py
+dapr run --app-id durable-agent-minimal --resources-path ./resources -- python durable_agent_minimal.py
 ```
 
-This command runs a Dapr sidecar and the agent. The prompt triggers a durable workflow that prints a haiku about programming (shown below) and then shuts down.
+This command starts a Dapr sidecar and executes the agent. The prompt triggers a durable workflow, prints the response, and exits.
+
+Example output:
 
 ```bash
 == APP == user:
 == APP == Write a haiku about programming.
-== APP == 
+== APP ==
 == APP == --------------------------------------------------------------------------------
-== APP == 
+== APP ==
 == APP == Assistant(assistant):
-== APP == Lines of logic flow,  
-== APP == Silent thoughts in coded streams—  
+== APP == Lines of logic flow,
+== APP == Silent thoughts in coded streams—
 == APP == Dreams compile to life.
-== APP == 
+== APP ==
 == APP == --------------------------------------------------------------------------------
-== APP == 
+== APP ==
 ```
 
-## Run tiniest Durable Agent in standalone mode
+## Run the tiniest Durable Agent (standalone service mode)
 
-This is the entire agent [implementation](./durable_agent_service.py).
+This is the complete service-style implementation: [`durable_agent_service.py`](./durable_agent_service.py).
 
 ```python
 from dapr_agents import DurableAgent
@@ -79,26 +90,49 @@ finally:
     runner.shutdown(agent)
 ```
 
-* Run the agent
+Run the agent as a long-running service:
 
 ```bash
-dapr run --app-id durable-agent-service --resources-path ./resources -p 8001 --log-level warn --metrics-port=9090 --dapr-http-port=3500 -- python durable_agent_service.py
+dapr run --app-id durable-agent-service --resources-path ./resources -p 8001 --log-level warn --metrics-port=9090 --dapr-http-port=3500 --enable-api-logging -- python durable_agent_service.py
 ```
 
+## What this agent does
 
-### Despite its size, this Agent does the following
-* Exposes the agent on `http://localhost:8001/run`
-* Uses the [Dapr Conversation API](https://docs.dapr.io/developing-applications/building-blocks/conversation/) to talk to an OpenAI model
-* Uses the [Dapr Pub/Sub API](https://docs.dapr.io/developing-applications/building-blocks/pubsub/) to subscribe to Redis on `assistant.topic`
-* Uses the [Dapr Workflow API](https://docs.dapr.io/developing-applications/building-blocks/workflow/) as a durable execution engine to persist agent actions into Redis
-* Uses the [Dapr State Store API](https://docs.dapr.io/developing-applications/building-blocks/state-management/) to persist conversation history to Redis
-* Uses the Dapr State Store API to register itself in Redis for discovery by other agents
-* Uses [Dapr observability features](https://docs.dapr.io/operations/observability/tracing/tracing-overview/) to send execution traces to Zipkin at `http://localhost:9411/`
+Despite its size, this agent:
+
+- Exposes an HTTP endpoint at `http://localhost:8001/run`
+- Subscribes to Redis via the [Dapr Pub/Sub API](https://docs.dapr.io/developing-applications/building-blocks/pubsub/) on `assistant.topic`
+- Uses the [Dapr Conversation API](https://docs.dapr.io/developing-applications/building-blocks/conversation/) to decouple interaction with LLM providers
+- Uses the [Dapr Workflow API](https://docs.dapr.io/developing-applications/building-blocks/workflow/) to execute agent logic durably
+- Persists conversation history using the [Dapr State Store API](https://docs.dapr.io/developing-applications/building-blocks/state-management/)
+- Registers itself into an agent registry for discovery by other agents
+- Is assigned a workload identity based on SPIFFE via Dapr’s built-in mTLS and identity system  
+  https://docs.dapr.io/concepts/security-concept/#identity
+- Supports automatic authentication between agents and callers via Dapr sidecar-to-sidecar security  
+  https://docs.dapr.io/concepts/security-concept/#authentication
+- Consumes configuration values from external configuration stores using the [Dapr Configuration API](https://docs.dapr.io/developing-applications/building-blocks/configuration/)
+- Retrieves secrets such as LLM credentials using the [Dapr Secrets API](https://docs.dapr.io/developing-applications/building-blocks/secrets/)
+- Emits distributed traces via [Dapr observability](https://docs.dapr.io/operations/observability/tracing/tracing-overview/) to Zipkin at `http://localhost:9411/`
+- Exposes [Prometheus-compatible metrics](https://docs.dapr.io/operations/observability/metrics/metrics-overview/)
+- Logs all [API interactions](https://docs.dapr.io/operations/troubleshooting/api-logs-troubleshooting/) with backing infrastructure such as Redis, Pub/Sub brokers, and LLM providers
+
+### Capabilities not enabled in this example (but easily added)
+
+The following Dapr capabilities are not enabled in this example, but can be added without changing application code:
+
+- **Resiliency policies**  
+  Add retries, timeouts, and circuit breakers when interacting with state stores, Pub/Sub systems, and LLM providers using the [Dapr Resiliency API](https://docs.dapr.io/developing-applications/building-blocks/resiliency/resiliency-overview/)
+
+- **Durable retries and compensation logic**  
+  Configure retry behavior and failure handling directly in workflows using the [Dapr Workflow API](https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-overview/)
+
+- **Authorization and access control**  
+  Control which callers can invoke this agent and which operations are permitted using [Dapr access control policies](https://docs.dapr.io/operations/security/app-api-token/) and [Dapr mTLS authorization](https://docs.dapr.io/operations/security/mtls/mtls-overview/)
 
 
-### Trigger the agent over HTTP
+## Trigger the agent over HTTP
 
-In a separate terminal, prompt the agent over HTTP:
+In a separate terminal:
 
 ```bash
 curl -i -X POST http://localhost:8001/run \
@@ -106,11 +140,11 @@ curl -i -X POST http://localhost:8001/run \
   -d '{"task": "Write a haiku about programming."}'
 ```
 
-You will get back the workflow instance ID started by the prompt.
+The response includes the workflow instance ID created for this request.
 
-### Trigger the agent over PubSub
+## Trigger the agent over Pub/Sub
 
-Prompt the agent by publishing the prompt to a PubSub topic:
+Publish a prompt to the subscribed topic:
 
 ```bash
 curl -i -X POST http://localhost:3500/v1.0/publish/agent-pubsub/assistant.topic \
@@ -120,47 +154,73 @@ curl -i -X POST http://localhost:3500/v1.0/publish/agent-pubsub/assistant.topic 
       }'
 ```
 
-You will get confirmation that the event was published
+Dapr confirms that the event was published.
 
 ## Examine workflow executions
-* In a separate terminal, launch the [Diagrid Dashboard](https://www.diagrid.io/blog/improving-the-local-dapr-workflow-experience-diagrid-dashboard):
+
+Launch the Diagrid Dashboard in a separate terminal:
 
 ```bash
 docker run -p 8080:8080 ghcr.io/diagridio/diagrid-dashboard:latest
 ```
-* View agent workflows triggered by the prompts at `http://localhost:8080/`
+
+View agent workflows at:
+
+```
+http://localhost:8080/
+```
 
 ![diagrid-dashboard.png](images/diagrid-dashboard.png)
 
 ## Examine agent traces in Zipkin
 
-The Dapr CLI installs and runs Zipkin by default. View agent traces at: `http://localhost:9411/`
+The Dapr CLI starts Zipkin by default. Open:
 
-If Zipkin is not running, start it with:
+```
+http://localhost:9411/
+```
+
+If Zipkin is not running:
 
 ```bash
 docker run -d -p 9411:9411 openzipkin/zipkin
 ```
+
 ![zipkin.png](images/zipkin.png)
 
-## Examine Prometheus-compatible metrics 
+## Examine Prometheus-compatible metrics
 
-`http://localhost:9090/`
+```
+http://localhost:9090/
+```
 
 ## Examine Redis storage
 
-Launch Redis Insight:
+Start Redis Insight:
 
-```bash 
+```bash
 docker run --rm -d --name redisinsight -p 5540:5540 redis/redisinsight:latest
 ```
 
-View Redis Insight at: `http://localhost:5540/`. Connect to local Redis at `host.docker.internal:6379` (Mac or Windows) or `172.17.0.1:6379` (Linux). Inspect persisted conversation history, workflow execution, and PubSub messages.
+Open:
+
+```
+http://localhost:5540/
+```
+
+Connect to Redis:
+
+* macOS or Windows: `host.docker.internal:6379`
+* Linux: `172.17.0.1:6379`
+
+Inspect conversation state, workflow history, and Pub/Sub messages.
 
 ![redis-insights.png](images/redis-insights.png)
 
-## Next Steps
+## Next steps
 
-For a detailed visualization of agent workflow execution, follow [this quickstart guide](https://diagrid.ws/durable-agent-qs)
+For a deeper walkthrough and visual exploration of agent workflows, see:
+[https://diagrid.ws/durable-agent-qs](https://diagrid.ws/durable-agent-qs)
 
 ![diagrid-catalyst.png](images/diagrid-catalyst.png)
+
