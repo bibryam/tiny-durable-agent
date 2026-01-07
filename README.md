@@ -106,10 +106,8 @@ Despite its size, this agent:
 - Uses the [Dapr Workflow API](https://docs.dapr.io/developing-applications/building-blocks/workflow/) to execute agent logic durably
 - Persists conversation history using the [Dapr State Store API](https://docs.dapr.io/developing-applications/building-blocks/state-management/)
 - Registers itself into an agent registry for discovery by other agents
-- Is assigned a workload identity based on SPIFFE via Dapr’s built-in mTLS and identity system  
-  https://docs.dapr.io/concepts/security-concept/#identity
-- Supports automatic authentication between agents and callers via Dapr sidecar-to-sidecar security  
-  https://docs.dapr.io/concepts/security-concept/#authentication
+- Is assigned a workload identity based on SPIFFE via [Dapr’s built-in mTLS](https://docs.dapr.io/concepts/security-concept/#identity) and identity system
+- Supports automatic authentication between agents and callers via Dapr [sidecar-to-sidecar security](https://docs.dapr.io/concepts/security-concept/#authentication)
 - Consumes configuration values from external configuration stores using the [Dapr Configuration API](https://docs.dapr.io/developing-applications/building-blocks/configuration/)
 - Retrieves secrets such as LLM credentials using the [Dapr Secrets API](https://docs.dapr.io/developing-applications/building-blocks/secrets/)
 - Emits distributed traces via [Dapr observability](https://docs.dapr.io/operations/observability/tracing/tracing-overview/) to Zipkin at `http://localhost:9411/`
@@ -149,9 +147,7 @@ Publish a prompt to the subscribed topic:
 ```bash
 curl -i -X POST http://localhost:3500/v1.0/publish/agent-pubsub/assistant.topic \
   -H "Content-Type: application/json" \
-  -d '{
-        "task": "Write a haiku about programming."
-      }'
+  -d '{"task": "Write a haiku about programming."}'
 ```
 
 Dapr confirms that the event was published.
