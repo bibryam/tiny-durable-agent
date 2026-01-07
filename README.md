@@ -82,7 +82,7 @@ finally:
 * Run the agent
 
 ```bash
-dapr run --app-id durable-agent-service --resources-path ./resources -p 8001 --log-level warn -- python durable_agent_service.py
+dapr run --app-id durable-agent-service --resources-path ./resources -p 8001 --log-level warn --metrics-port=9090 --dapr-http-port=3500 -- python durable_agent_service.py
 ```
 
 
@@ -108,35 +108,27 @@ curl -i -X POST http://localhost:8001/run \
 
 You will get back the workflow instance ID started by the prompt.
 
-```bash
-HTTP/1.1 200 OK
-content-type: application/json
-{"instance_id":"b6a43bd858f148d5b95048ada055406a","status_url":"/v1.0/workflows/dapr/b6a43bd858f148d5b95048ada055406a"}%
-```
-
 ### Trigger the agent over PubSub
 
 Prompt the agent by publishing the prompt to a PubSub topic:
 
 ```bash
-dapr publish --publish-app-id durable-agent-service --pubsub agent-pubsub --topic assistant.topic --data '{"task": "Write a haiku about programming."}'
+curl -i -X POST http://localhost:3500/v1.0/publish/agent-pubsub/assistant.topic \
+  -H "Content-Type: application/json" \
+  -d '{
+        "task": "Write a haiku about programming."
+      }'
 ```
-
 
 You will get confirmation that the event was published
 
-```bash
-✅  Event published successfully
-```
-
 ## Examine workflow executions
-
-In a separate terminal, launch the [Diagrid Dashboard](https://www.diagrid.io/blog/improving-the-local-dapr-workflow-experience-diagrid-dashboard):
+* In a separate terminal, launch the [Diagrid Dashboard](https://www.diagrid.io/blog/improving-the-local-dapr-workflow-experience-diagrid-dashboard):
 
 ```bash
 docker run -p 8080:8080 ghcr.io/diagridio/diagrid-dashboard:latest
 ```
-View agent workflows triggered by the prompts at `http://localhost:8080/`
+* View agent workflows triggered by the prompts at `http://localhost:8080/`
 
 ![diagrid-dashboard.png](images/diagrid-dashboard.png)
 
