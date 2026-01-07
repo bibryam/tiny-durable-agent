@@ -195,34 +195,18 @@ docker run -d -p 9411:9411 openzipkin/zipkin
 ```
 http://localhost:9090/
 ```
+ 
 
-## Examine Redis storage
-
-Start Redis Insight:
-
-```bash
-docker run --rm -d --name redisinsight -p 5540:5540 redis/redisinsight:latest
-```
-
-Open:
-
-```
-http://localhost:5540/
-```
-
-Connect to Redis:
-
-* macOS or Windows: `host.docker.internal:6379`
-* Linux: `172.17.0.1:6379`
-
-Inspect conversation state, workflow history, and Pub/Sub messages.
-
-![redis-insights.png](images/redis-insights.png)
-
-## Next steps
+## Workflow Visualizer
 
 For a deeper walkthrough and visual exploration of agent workflows, see:
 [https://diagrid.ws/durable-agent-qs](https://diagrid.ws/durable-agent-qs)
 
+
 ![diagrid-catalyst.png](images/diagrid-catalyst.png)
+
+
+## Start with Dapr Agents
+
+Start with Dapr Agents here: [Dapr Agents quick starts](https://github.com/dapr/dapr-agents)
 
