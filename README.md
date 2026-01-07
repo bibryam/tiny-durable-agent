@@ -1,6 +1,9 @@
 # Tiniest Durable Agent
 
-A minimal, production-ready durable agent built with [Dapr Agents](https://diagrid.ws/dapr-agents-doc). This example shows how little code is required to build a durable, observable, and discoverable AI agent on Dapr.
+A minimal, production-ready durable agent built with [Dapr Agents](https://diagrid.ws/dapr-agents-doc). This example shows how little code is required to build a durable and at the same time production-ready AI agent.
+
+![dapr-agents.png](images/dapr-agents.png)
+
 
 ## Prerequisites
 - [OpenAI API key](https://platform.openai.com/api-keys) or another supported LLM provider
