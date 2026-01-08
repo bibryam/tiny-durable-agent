@@ -7,7 +7,7 @@ A minimal, operationally production-ready, durable agent built with [Dapr Agents
 
 ## Prerequisites
 - [OpenAI API key](https://platform.openai.com/api-keys) or another supported LLM provider
-- [Python 3.10+](https://www.python.org/downloads/)
+- [Python 3.11+](https://www.python.org/downloads/)
 - [Docker](https://docs.docker.com/desktop/)
 
 ## Setup
@@ -34,7 +34,7 @@ resources/llm-provider.yaml
 ### Create a virtual environment and install dapr-agents
 
 ```bash
-python3.10 -m venv .venv && source .venv/bin/activate && pip install "dapr-agents>=0.10.5"
+python3.11 -m venv .venv && source .venv/bin/activate && pip install "dapr-agents>=0.10.5"
 ```
 
 ## Run the tiniest Durable Agent (in embedded mode)
@@ -203,7 +203,7 @@ Stop any locally running agent instances and run the agent with full agentic bac
 diagrid dev run -f tiny-durable-agent.yaml --approve
 ```
 
-Access the Workflow Visualizer here [https://catalyst.diagrid.io/](https://catalyst.diagrid.io/) and trigger the agent as shown earlier over HTTP or PubSub.
+Access the Workflow Visualizer here [https://catalyst.diagrid.io/](https://catalyst.diagrid.io/) and trigger the agent as shown earlier over HTTP.
 
 ![diagrid-catalyst.png](images/diagrid-catalyst.png)
 
