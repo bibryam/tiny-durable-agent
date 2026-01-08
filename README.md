@@ -1,6 +1,6 @@
 # Tiniest Durable Agent
 
-A minimal, production-ready durable agent built with [Dapr Agents](https://diagrid.ws/dapr-agents-doc). This example shows how little code is required to build a durable and at the same time production-ready AI agent.
+A minimal, operationally production-ready, durable agent built with [Dapr Agents](https://diagrid.ws/dapr-agents-doc). This example shows how little code is required to build a durable and at the same time production-ready AI agent.
 
 ![dapr-agents.png](images/dapr-agents.png)
 
@@ -37,9 +37,9 @@ resources/llm-provider.yaml
 python3.10 -m venv .venv && source .venv/bin/activate && pip install "dapr-agents>=0.10.5"
 ```
 
-## Run the tiniest Durable Agent (embedded mode)
+## Run the tiniest Durable Agent (in embedded mode)
 
-This is the complete agent implementation: [`durable_agent_minimal.py`](./durable_agent_minimal.py).
+This is the complete durable agent implementation: [`durable_agent_minimal.py`](./durable_agent_minimal.py).
 
 ```python
 from dapr_agents import DurableAgent
@@ -51,32 +51,32 @@ print(runner.run_sync(agent, {"task": "Write a haiku about programming."}))
 runner.shutdown(agent)
 ```
 
-Run the agent:
+Run the agent with a sidecar:
 
 ```bash
 dapr run --app-id durable-agent-minimal --resources-path ./resources -- python durable_agent_minimal.py
 ```
 
-This command starts a Dapr sidecar and executes the agent. The prompt triggers a durable workflow, prints the response, and exits.
+This command starts a Dapr sidecar and runs the agent. The prompt triggers a durable workflow which prints the response, and completes.
 
 Example output:
 
-```bash
+```log
 == APP == user:
 == APP == Write a haiku about programming.
 == APP ==
-== APP == --------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 == APP ==
 == APP == Assistant(assistant):
 == APP == Lines of logic flow,
 == APP == Silent thoughts in coded streams—
 == APP == Dreams compile to life.
 == APP ==
-== APP == --------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 == APP ==
 ```
 
-## Run the tiniest Durable Agent (standalone service mode)
+## Run the tiniest Durable Agent (as a standalone app)
 
 This is the complete service-style implementation: [`durable_agent_service.py`](./durable_agent_service.py).
 
@@ -96,7 +96,7 @@ finally:
 Run the agent as a long-running service:
 
 ```bash
-dapr run --app-id durable-agent-service --resources-path ./resources -p 8001 --log-level warn --metrics-port=9090 --dapr-http-port=3500 --enable-api-logging -- python durable_agent_service.py
+dapr run -f tiny-durable-agent.yaml
 ```
 
 ## What this agent does
@@ -118,21 +118,13 @@ Despite its size, this agent:
 - Logs all [API interactions](https://docs.dapr.io/operations/troubleshooting/api-logs-troubleshooting/) with backing infrastructure such as Redis, Pub/Sub brokers, and LLM providers
 
 ### Capabilities not enabled in this example (but easily added)
+ Identity, security, durability, observability, configuration, and integration with backing systems are provided uniformly by Dapr. The following Dapr capabilities are not enabled in this example, but can be added without changing the agent code:
 
-The following Dapr capabilities are not enabled in this example, but can be added without changing application code:
-
-- **Resiliency policies**  
-  Add retries, timeouts, and circuit breakers when interacting with state stores, Pub/Sub systems, and LLM providers using the [Dapr Resiliency API](https://docs.dapr.io/developing-applications/building-blocks/resiliency/resiliency-overview/)
-
-- **Durable retries and compensation logic**  
-  Configure retry behavior and failure handling directly in workflows using the [Dapr Workflow API](https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-overview/)
-
-- **Authorization and access control**  
-  Control which callers can invoke this agent and which operations are permitted using [Dapr access control policies](https://docs.dapr.io/operations/security/app-api-token/) and [Dapr mTLS authorization](https://docs.dapr.io/operations/security/mtls/mtls-overview/)
-
-**Operational by default**
-
-All of these capabilities come from running the agent with a Dapr sidecar. Identity, security, durability, observability, configuration, and integration with backing systems are provided uniformly by Dapr.
+- Adds retries, timeouts, and circuit breakers using the [Dapr Resiliency API](https://docs.dapr.io/developing-applications/building-blocks/resiliency/resiliency-overview/)
+- Enables durable retries and compensation logic using the [Dapr Workflow API](https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-overview/)
+- Enforces caller authorization and access control using [Dapr access control policies](https://docs.dapr.io/operations/security/app-api-token/) and [Dapr mTLS authorization](https://docs.dapr.io/operations/security/mtls/mtls-overview/)
+- Uses secrets from external secret stores via the [Dapr Secrets API](https://docs.dapr.io/developing-applications/building-blocks/secrets/)
+- Configures the agent using values from external configuration stores via the [Dapr Configuration API](https://docs.dapr.io/developing-applications/building-blocks/configuration/)
 
 ## Trigger the agent over HTTP
 
@@ -169,23 +161,23 @@ docker run -p 8080:8080 ghcr.io/diagridio/diagrid-dashboard:latest
 View agent workflows at:
 
 ```
-http://localhost:8080/
+http://localhost:8080
 ```
 
 ![diagrid-dashboard.png](images/diagrid-dashboard.png)
 
 ## Examine agent traces in Zipkin
 
-The Dapr CLI starts Zipkin by default. Open:
-
-```
-http://localhost:9411/
-```
-
-If Zipkin is not running:
+The Dapr CLI starts Zipkin by default. If Zipkin is not running:
 
 ```bash
 docker run -d -p 9411:9411 openzipkin/zipkin
+```
+
+Then see the agent execution traces:
+
+```
+http://localhost:9411
 ```
 
 ![zipkin.png](images/zipkin.png)
@@ -193,20 +185,28 @@ docker run -d -p 9411:9411 openzipkin/zipkin
 ## Examine Prometheus-compatible metrics
 
 ```
-http://localhost:9090/
+http://localhost:9090
 ```
  
 
 ## Workflow Visualizer
 
-For a deeper walkthrough and visual exploration of agent workflows, see:
-[https://diagrid.ws/durable-agent-qs](https://diagrid.ws/durable-agent-qs)
+To see the agent’s execution, including each step taken by the agent with inputs and outputs for every LLM and tool call, use the Workflow Visualizer in [Diagrid Catalyst](http://diagrid.io/catalyst).
 
+After sign up to Catalyst, create a project: 
+```bash
+diagrid project create tiny-durable-agent-project --deploy-managed-pubsub --deploy-managed-kv --enable-managed-workflow --use
+```
+Stop any locally running agent instances and run the agent with full agentic backend (workflow engine, pubsub, LLM API, storage) provided by Catalyst:
+
+```bash
+diagrid dev run -f tiny-durable-agent.yaml --approve
+```
+
+Access the Workflow Visualizer here [https://catalyst.diagrid.io/](https://catalyst.diagrid.io/) and trigger the agent as shown earlier over HTTP or PubSub.
 
 ![diagrid-catalyst.png](images/diagrid-catalyst.png)
-
 
 ## Start with Dapr Agents
 
 Start with Dapr Agents here: [Dapr Agents quick starts](https://github.com/dapr/dapr-agents)
-
